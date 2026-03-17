@@ -1,0 +1,53 @@
+title: 8
+difficulty: Beginner
+vehicles:
+  - color: red
+    x: 2 
+    y: 2
+    length: 2
+    orientation: horizontal
+  - color: light green
+    x: 0
+    y: 0
+    length: 2
+    orientation: horizontal
+  - color: lavender
+    x: 0
+    y: 1
+    length: 2
+    orientation: horizontal
+  - color: yellow
+    x: 1
+    y: 2
+    length: 3
+    orientation: vertical
+  - color: orange
+    x: 2
+    y: 0
+    length: 2
+    orientation: vertical
+  - color: light blue
+    x: 3
+    y: 0
+    length: 2
+    orientation: vertical
+  - color: pink
+    x: 4
+    y: 0
+    length: 2
+    orientation: horizontal
+  - color: dark green
+    x: 4
+    y: 1
+    length: 2
+    orientation: vertical
+  - color: silver
+    x: 5
+    y: 1
+    length: 2
+    orientation: vertical
+  - color: orange
+    x: 3
+    y: 4
+    length: 3
+    orientation: horizontal

@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  font-family:
+    "DM Sans",
+    "Avenir Next",
+    "Segoe UI",
+    sans-serif;
+  background:
+    radial-gradient(circle at top, #fff8eb 0%, #f2ebe0 55%, #e8dfd1 100%);
+  color: #1f2937;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+}
+
+@keyframes level-progress {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}

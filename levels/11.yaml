@@ -1,0 +1,55 @@
+title: 11
+difficulty: Intermediate
+vehicles:
+  - color: "#d9485f"
+    x: 0
+    y: 2
+    length: 2
+    orientation: horizontal
+  - color: "#f59e0b"
+    x: 0
+    y: 0
+    length: 3
+    orientation: horizontal
+  - color: "#2563eb"
+    x: 0
+    y: 4
+    length: 3
+    orientation: horizontal
+  - color: "#84cc16"
+    x: 3
+    y: 0
+    length: 2
+    orientation: vertical
+  - color: "#f59e0b"
+    x: 5
+    y: 0
+    length: 2
+    orientation: vertical
+  - color: "#0ea5e9"
+    x: 5
+    y: 2
+    length: 2
+    orientation: vertical
+  - color: "#f97316"
+    x: 2
+    y: 1
+    length: 3
+    orientation: vertical
+  - color: "#d9485f"
+    x: 3
+    y: 3
+    length: 2
+    orientation: horizontal
+  - color: "#8b5cf6"
+    x: 4
+    y: 4
+    length: 2
+    orientation: vertical
+  - color: "#84cc16"
+    x: 1
+    y: 5
+    length: 2
+    orientation: horizontal
+
+
