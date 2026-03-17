@@ -20,7 +20,7 @@
   let history: Vehicle[][] = [];
   let completed = new Set<string>();
   let solvedOverlayVisible = false;
-  let autoAdvanceHandle: ReturnType<typeof window.setTimeout> | null = null;
+  let autoAdvanceHandle: number | null = null;
 
   function clearAutoAdvance(): void {
     if (autoAdvanceHandle !== null) {

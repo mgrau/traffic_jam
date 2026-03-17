@@ -51,3 +51,7 @@ Recommended difficulty labels are `Beginner`, `Intermediate`, `Advanced`, and `E
 - `npm run dev`
 - `npm run check`
 - `npm run build`
+
+## Deployment
+
+Pushes to `main` automatically deploy the built site to GitHub Pages through `.github/workflows/deploy-pages.yml`. The Vite `base` path is derived from `GITHUB_REPOSITORY` during GitHub Actions builds, so the app is served correctly from the repository subpath.
