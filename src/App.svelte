@@ -7,7 +7,7 @@
   import type { GameState, Vehicle } from './lib/puzzle/types';
 
   const STORAGE_KEY = 'traffic-jam-progress-v1';
-  const AUTO_ADVANCE_DELAY_MS = 1000;
+  const AUTO_ADVANCE_DELAY_MS = 2000;
 
   interface SavedProgress {
     completed: string[];
@@ -33,9 +33,23 @@
     clearAutoAdvance();
     solvedOverlayVisible = true;
     autoAdvanceHandle = window.setTimeout(() => {
-      solvedOverlayVisible = false;
-      goToNextLevel();
+      advanceFromSolvedOverlay();
     }, AUTO_ADVANCE_DELAY_MS);
+  }
+
+  function advanceFromSolvedOverlay(): void {
+    clearAutoAdvance();
+    solvedOverlayVisible = false;
+    goToNextLevel();
+  }
+
+  function handleSolvedOverlayKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    advanceFromSolvedOverlay();
   }
 
   function persistProgress(): void {
@@ -316,7 +330,12 @@
             {#if solvedOverlayVisible}
               <div
                 class="absolute inset-0 z-30 flex items-center justify-center rounded-[2rem] bg-emerald-950/24 p-4 backdrop-blur-[2px]"
+                role="button"
+                tabindex="0"
+                aria-label="Continue to the next level"
                 transition:fade={{ duration: 180 }}
+                on:click={advanceFromSolvedOverlay}
+                on:keydown={handleSolvedOverlayKeydown}
               >
                 <div
                   class="w-full rounded-[1.6rem] border border-emerald-300/70 bg-emerald-50/95 px-5 py-6 text-center shadow-[0_24px_60px_rgba(6,95,70,0.28)]"
@@ -341,10 +360,13 @@
                     {level.title} cleared in {state.moves} moves
                   </p>
                   <p class="mt-2 text-sm text-emerald-900/80">
-                    Loading the next puzzle...
+                    Loading the next puzzle... Click to continue now.
                   </p>
                   <div class="mt-4 h-2 overflow-hidden rounded-full bg-emerald-200">
-                      <div class="h-full rounded-full bg-emerald-500 animate-[level-progress_1s_linear_forwards]"></div>
+                      <div
+                        class="h-full rounded-full bg-emerald-500"
+                        style={`animation: level-progress ${AUTO_ADVANCE_DELAY_MS}ms linear forwards;`}
+                      ></div>
                   </div>
                 </div>
               </div>
