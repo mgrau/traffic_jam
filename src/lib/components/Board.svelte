@@ -316,20 +316,6 @@
           ></div>
 
           {#if vehicle.orientation === 'horizontal'}
-            <div
-              class="pointer-events-none absolute right-[11%] top-[20%] rounded-[0.65rem] border border-white/20 bg-slate-900/20"
-              style:width={`${vehicle.length === 3 ? 26 : 30}%`}
-              style:height={`${vehicle.length === 3 ? 60 : 54}%`}
-            ></div>
-
-            {#if vehicle.length === 3}
-              <div
-                class="pointer-events-none absolute left-[10%] top-[18%] rounded-[0.65rem] border border-white/14 bg-black/8"
-                style:width="34%"
-                style:height="64%"
-              ></div>
-            {/if}
-
             <div class="pointer-events-none absolute inset-y-[16%] right-[6%] flex flex-col items-center justify-between">
               <div class="h-[0.48rem] w-[0.3rem] rounded-full bg-amber-100/95 shadow-[0_0_10px_rgba(255,251,235,0.85)]"></div>
               <div class="h-[0.48rem] w-[0.3rem] rounded-full bg-amber-100/95 shadow-[0_0_10px_rgba(255,251,235,0.85)]"></div>
@@ -349,20 +335,6 @@
               ></div>
             {/each}
           {:else}
-            <div
-              class="pointer-events-none absolute bottom-[11%] left-[20%] rounded-[0.65rem] border border-white/20 bg-slate-900/20"
-              style:width={`${vehicle.length === 3 ? 60 : 54}%`}
-              style:height={`${vehicle.length === 3 ? 26 : 30}%`}
-            ></div>
-
-            {#if vehicle.length === 3}
-              <div
-                class="pointer-events-none absolute left-[18%] top-[10%] rounded-[0.65rem] border border-white/14 bg-black/8"
-                style:width="64%"
-                style:height="34%"
-              ></div>
-            {/if}
-
             <div class="pointer-events-none absolute bottom-[6%] inset-x-[16%] flex items-center justify-between">
               <div class="h-[0.3rem] w-[0.48rem] rounded-full bg-amber-100/95 shadow-[0_0_10px_rgba(255,251,235,0.85)]"></div>
               <div class="h-[0.3rem] w-[0.48rem] rounded-full bg-amber-100/95 shadow-[0_0_10px_rgba(255,251,235,0.85)]"></div>
