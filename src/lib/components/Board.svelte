@@ -9,11 +9,13 @@
 
   interface DragState {
     vehicleIndex: number;
+    element: HTMLElement;
     pointerId: number;
     startX: number;
     startY: number;
     startCoordinate: number;
     currentCoordinate: number;
+    currentOffsetPixels: number;
     range: MoveRange;
     orientation: Vehicle['orientation'];
   }
@@ -51,47 +53,39 @@
     return () => observer.disconnect();
   });
 
-  function getDisplayCoordinate(vehicle: Vehicle, index: number): number {
-    if (drag?.vehicleIndex === index) {
-      return drag.currentCoordinate;
-    }
-
-    return vehicle.orientation === 'horizontal' ? vehicle.x : vehicle.y;
-  }
-
-  function getCoordinateFromEvent(event: PointerEvent, currentDrag: DragState): number {
+  function getDeltaPixelsFromEvent(event: PointerEvent, currentDrag: DragState): number {
     if (boardPixels === 0) {
-      return currentDrag.startCoordinate;
+      return 0;
     }
 
-    const deltaPixels =
+    const rawDeltaPixels =
       currentDrag.orientation === 'horizontal'
         ? event.clientX - currentDrag.startX
         : event.clientY - currentDrag.startY;
-    const deltaCells = deltaPixels / (boardPixels / BOARD_SIZE);
+    const cellPixels = boardPixels / BOARD_SIZE;
+    const minOffset = (currentDrag.range.min - currentDrag.startCoordinate) * cellPixels;
+    const maxOffset = (currentDrag.range.max - currentDrag.startCoordinate) * cellPixels;
 
-    return Math.max(
-      currentDrag.range.min,
-      Math.min(currentDrag.range.max, currentDrag.startCoordinate + deltaCells)
-    );
+    return Math.max(minOffset, Math.min(maxOffset, rawDeltaPixels));
   }
 
-  function getReleaseCoordinate(event: PointerEvent, currentDrag: DragState): number {
-    const rawCoordinate = getCoordinateFromEvent(event, currentDrag);
-    const delta = rawCoordinate - currentDrag.startCoordinate;
+  function updateDraggedElement(currentDrag: DragState): void {
+    const x = currentDrag.orientation === 'horizontal' ? currentDrag.currentOffsetPixels : 0;
+    const y = currentDrag.orientation === 'vertical' ? currentDrag.currentOffsetPixels : 0;
 
-    if (delta > 0) {
-      return Math.min(currentDrag.range.max, Math.ceil(rawCoordinate));
-    }
-
-    if (delta < 0) {
-      return Math.max(currentDrag.range.min, Math.floor(rawCoordinate));
-    }
-
-    return currentDrag.startCoordinate;
+    currentDrag.element.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.02)`;
   }
 
-  function getReleaseCoordinateFromCurrentDrag(currentDrag: DragState): number {
+  function syncDragFromEvent(event: PointerEvent, currentDrag: DragState): void {
+    const deltaPixels = getDeltaPixelsFromEvent(event, currentDrag);
+    const deltaCells = boardPixels === 0 ? 0 : deltaPixels / (boardPixels / BOARD_SIZE);
+
+    currentDrag.currentOffsetPixels = deltaPixels;
+    currentDrag.currentCoordinate = currentDrag.startCoordinate + deltaCells;
+    updateDraggedElement(currentDrag);
+  }
+
+  function getReleaseCoordinate(currentDrag: DragState): number {
     const delta = currentDrag.currentCoordinate - currentDrag.startCoordinate;
 
     if (delta > 0) {
@@ -105,13 +99,20 @@
     return currentDrag.startCoordinate;
   }
 
-  function vehicleClasses(index: number): string {
-    const dragging = drag?.vehicleIndex === index;
+  function setDraggingStyles(element: HTMLElement, dragging: boolean): void {
+    element.classList.toggle('ring-4', dragging);
+    element.classList.toggle('ring-white/60', dragging);
+    element.style.willChange = dragging ? 'transform' : '';
 
+    if (!dragging) {
+      element.style.transform = '';
+    }
+  }
+
+  function vehicleClasses(): string {
     return [
-      'absolute flex items-center justify-center rounded-[1rem] border border-black/10 px-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_20px_42px_rgba(15,23,42,0.30),0_8px_16px_rgba(15,23,42,0.18)] outline-none transition-transform duration-150 focus-visible:ring-4 focus-visible:ring-stone-700/25',
-      disabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
-      dragging ? 'ring-4 ring-white/60' : ''
+      'absolute flex items-center justify-center rounded-[1rem] border border-black/10 px-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_20px_42px_rgba(15,23,42,0.30),0_8px_16px_rgba(15,23,42,0.18)] outline-none focus-visible:ring-4 focus-visible:ring-stone-700/25',
+      disabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
     ].join(' ');
   }
 
@@ -132,6 +133,7 @@
       return;
     }
 
+    const element = event.currentTarget as HTMLElement;
     const range = getMoveRange(vehicles, index);
     const startCoordinate = vehicle.orientation === 'horizontal' ? vehicle.x : vehicle.y;
 
@@ -141,16 +143,19 @@
 
     drag = {
       vehicleIndex: index,
+      element,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
       startCoordinate,
       currentCoordinate: startCoordinate,
+      currentOffsetPixels: 0,
       range,
       orientation: vehicle.orientation
     };
 
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    setDraggingStyles(element, true);
+    element.setPointerCapture(event.pointerId);
     event.preventDefault();
   }
 
@@ -159,10 +164,7 @@
       return;
     }
 
-    drag = {
-      ...drag,
-      currentCoordinate: getCoordinateFromEvent(event, drag)
-    };
+    syncDragFromEvent(event, drag);
   }
 
   function endDrag(event: PointerEvent): void {
@@ -170,11 +172,14 @@
       return;
     }
 
-    const finalCoordinate = getReleaseCoordinate(event, drag);
+    syncDragFromEvent(event, drag);
+    const finalCoordinate = getReleaseCoordinate(drag);
     const changed = finalCoordinate !== drag.startCoordinate;
     const vehicleIndex = drag.vehicleIndex;
+    const element = drag.element;
 
     drag = null;
+    setDraggingStyles(element, false);
 
     if (changed) {
       onCommitMove(vehicleIndex, finalCoordinate);
@@ -186,6 +191,7 @@
       return;
     }
 
+    setDraggingStyles(drag.element, false);
     drag = null;
   }
 
@@ -194,11 +200,13 @@
       return;
     }
 
-    const finalCoordinate = getReleaseCoordinateFromCurrentDrag(drag);
+    const finalCoordinate = getReleaseCoordinate(drag);
     const changed = finalCoordinate !== drag.startCoordinate;
     const vehicleIndex = drag.vehicleIndex;
+    const element = drag.element;
 
     drag = null;
+    setDraggingStyles(element, false);
 
     if (changed) {
       onCommitMove(vehicleIndex, finalCoordinate);
@@ -291,14 +299,13 @@
           role="button"
           tabindex={disabled ? -1 : 0}
           aria-label={`Move ${vehicleLabel(vehicle, index)}`}
-          class={vehicleClasses(index)}
+          class={vehicleClasses()}
           style="touch-action: none;"
-          style:left={`${(vehicle.orientation === 'horizontal' ? getDisplayCoordinate(vehicle, index) : vehicle.x) * percent}%`}
-          style:top={`${(vehicle.orientation === 'vertical' ? getDisplayCoordinate(vehicle, index) : vehicle.y) * percent}%`}
+          style:left={`${vehicle.x * percent}%`}
+          style:top={`${vehicle.y * percent}%`}
           style:width={`${(vehicle.orientation === 'horizontal' ? vehicle.length : 1) * percent}%`}
           style:height={`${(vehicle.orientation === 'vertical' ? vehicle.length : 1) * percent}%`}
           style:background={`${vehicle.color}`}
-          style:transform={drag?.vehicleIndex === index ? 'scale(1.02)' : 'scale(1)'}
           on:pointerdown={(event) => startDrag(event, vehicle, index)}
           on:pointermove={updateDrag}
           on:pointerup={endDrag}
