@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { BOARD_SIZE, type MoveRange, type Vehicle } from '../puzzle/types';
   import { getMoveRange } from '../puzzle/game';
 
@@ -35,6 +35,8 @@
   const exitOffset = '1.4rem';
   const exitLaneStart = `${2 * percent}%`;
   const exitLaneSize = `${percent}%`;
+  const SNAP_TRANSITION_MS = 160;
+  const SNAP_TRANSITION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
   function updateBoardPixels(): void {
     boardPixels = playfieldElement?.clientWidth ?? 0;
@@ -74,10 +76,10 @@
   }
 
   function updateDraggedElement(currentDrag: DragState): void {
-    const x = currentDrag.orientation === 'horizontal' ? currentDrag.currentOffsetPixels : 0;
-    const y = currentDrag.orientation === 'vertical' ? currentDrag.currentOffsetPixels : 0;
-
-    currentDrag.element.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.02)`;
+    currentDrag.element.style.transform = dragTransform(
+      currentDrag.orientation,
+      currentDrag.currentOffsetPixels
+    );
   }
 
   function syncDragFromEvent(event: PointerEvent, currentDrag: DragState): void {
@@ -103,14 +105,83 @@
     return currentDrag.startCoordinate;
   }
 
+  function dragTransform(orientation: Vehicle['orientation'], offsetPixels: number): string {
+    const x = orientation === 'horizontal' ? offsetPixels : 0;
+    const y = orientation === 'vertical' ? offsetPixels : 0;
+
+    return `translate3d(${x}px, ${y}px, 0) scale(1.02)`;
+  }
+
   function setDraggingStyles(element: HTMLElement, dragging: boolean): void {
     element.classList.toggle('ring-4', dragging);
     element.classList.toggle('ring-white/60', dragging);
     element.style.willChange = dragging ? 'transform' : '';
+    element.style.transition = dragging ? 'none' : '';
+  }
 
-    if (!dragging) {
-      element.style.transform = '';
+  function clearVehicleTransform(element: HTMLElement): void {
+    element.style.transition = '';
+    element.style.transform = '';
+    element.style.willChange = '';
+  }
+
+  async function animateSnapToGrid(currentDrag: DragState, finalCoordinate: number): Promise<void> {
+    if (boardPixels === 0) {
+      clearVehicleTransform(currentDrag.element);
+      return;
     }
+
+    const cellPixels = boardPixels / BOARD_SIZE;
+    const snappedOffsetPixels = (finalCoordinate - currentDrag.startCoordinate) * cellPixels;
+    const residualOffsetPixels = currentDrag.currentOffsetPixels - snappedOffsetPixels;
+
+    if (Math.abs(residualOffsetPixels) < 0.5) {
+      clearVehicleTransform(currentDrag.element);
+      return;
+    }
+
+    currentDrag.element.style.transition = 'none';
+    currentDrag.element.style.transform = dragTransform(
+      currentDrag.orientation,
+      residualOffsetPixels
+    );
+
+    await tick();
+
+    requestAnimationFrame(() => {
+      currentDrag.element.style.transition = `transform ${SNAP_TRANSITION_MS}ms ${SNAP_TRANSITION_EASING}`;
+      currentDrag.element.style.transform = '';
+    });
+
+    window.setTimeout(() => {
+      currentDrag.element.style.transition = '';
+      currentDrag.element.style.willChange = '';
+    }, SNAP_TRANSITION_MS);
+  }
+
+  function finishDrag(event: PointerEvent): void {
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    syncDragFromEvent(event, drag);
+    const currentDrag = drag;
+    const finalCoordinate = getReleaseCoordinate(currentDrag);
+    const changed = finalCoordinate !== currentDrag.startCoordinate;
+    const vehicleIndex = currentDrag.vehicleIndex;
+    const element = currentDrag.element;
+
+    drag = null;
+    setDraggingStyles(element, false);
+
+    if (!changed) {
+      clearVehicleTransform(element);
+      return;
+    }
+
+    const snapAnimation = animateSnapToGrid(currentDrag, finalCoordinate);
+    onCommitMove(vehicleIndex, finalCoordinate);
+    void snapAnimation;
   }
 
   function vehicleClasses(): string {
@@ -172,22 +243,7 @@
   }
 
   function endDrag(event: PointerEvent): void {
-    if (!drag || drag.pointerId !== event.pointerId) {
-      return;
-    }
-
-    syncDragFromEvent(event, drag);
-    const finalCoordinate = getReleaseCoordinate(drag);
-    const changed = finalCoordinate !== drag.startCoordinate;
-    const vehicleIndex = drag.vehicleIndex;
-    const element = drag.element;
-
-    drag = null;
-    setDraggingStyles(element, false);
-
-    if (changed) {
-      onCommitMove(vehicleIndex, finalCoordinate);
-    }
+    finishDrag(event);
   }
 
   function cancelDrag(event: PointerEvent): void {
@@ -196,25 +252,12 @@
     }
 
     setDraggingStyles(drag.element, false);
+    clearVehicleTransform(drag.element);
     drag = null;
   }
 
   function finalizeDragFromCaptureLoss(event: PointerEvent): void {
-    if (!drag || drag.pointerId !== event.pointerId) {
-      return;
-    }
-
-    const finalCoordinate = getReleaseCoordinate(drag);
-    const changed = finalCoordinate !== drag.startCoordinate;
-    const vehicleIndex = drag.vehicleIndex;
-    const element = drag.element;
-
-    drag = null;
-    setDraggingStyles(element, false);
-
-    if (changed) {
-      onCommitMove(vehicleIndex, finalCoordinate);
-    }
+    finishDrag(event);
   }
 
   function nudgeVehicle(vehicle: Vehicle, index: number, direction: -1 | 1): void {
