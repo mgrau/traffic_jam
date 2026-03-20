@@ -174,6 +174,11 @@
     persistProgress();
   }
 
+  function handleMobileLevelChange(event: Event): void {
+    const target = event.currentTarget as HTMLSelectElement;
+    loadLevel(Number(target.value));
+  }
+
   type DifficultyTone = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'unrated';
 
   function normalizeDifficulty(difficulty: string | undefined): DifficultyTone {
@@ -230,6 +235,10 @@
     }
   }
 
+  function levelLabel(index: number): string {
+    return `Level ${index + 1}`;
+  }
+
   function levelButtonClasses(isCurrent: boolean, difficulty: string | undefined): string {
     const tone = normalizeDifficulty(difficulty);
     const tintClasses =
@@ -260,18 +269,6 @@
     }
 
     return 'text-stone-400';
-  }
-
-  function levelTitleClasses(isCurrent: boolean, completedState: boolean): string {
-    if (isCurrent) {
-      return 'text-stone-900';
-    }
-
-    if (completedState) {
-      return 'text-stone-700';
-    }
-
-    return 'text-stone-700';
   }
 
   onMount(() => {
@@ -321,9 +318,9 @@
   />
 </svelte:head>
 
-<main class="min-h-screen bg-[radial-gradient(circle_at_top,#fff8eb_0%,#f4ecdf_40%,#e8ddcc_100%)] px-4 py-6 text-stone-900 sm:px-6 sm:py-10">
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-6 lg:flex-row lg:items-start">
-    <section class="flex-1 rounded-[2rem] border border-white/70 bg-white/55 p-5 shadow-[0_20px_80px_rgba(120,93,49,0.16)] backdrop-blur md:p-7">
+<main class="h-dvh overflow-hidden bg-[radial-gradient(circle_at_top,#fff8eb_0%,#f4ecdf_40%,#e8ddcc_100%)] px-3 py-3 text-stone-900 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
+  <div class="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-hidden lg:flex-row lg:items-start">
+    <section class="flex-1 min-h-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white/55 p-4 shadow-[0_20px_80px_rgba(120,93,49,0.16)] backdrop-blur sm:p-5 lg:p-6">
       {#if levelLoadErrors.length > 0}
         <div class="mb-5 rounded-[1.4rem] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <p class="font-semibold uppercase tracking-[0.18em] text-amber-800">Level warnings</p>
@@ -339,55 +336,93 @@
           </p>
         </div>
       {:else}
-      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-        <div class="flex flex-col items-center gap-4">
-          <div class="relative w-full max-w-[30rem]">
-            <Board vehicles={state.vehicles} disabled={state.won} onCommitMove={commitMove} />
+      <div class="flex h-full min-h-0 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
+        <div class="flex min-h-0 flex-col items-center gap-3 lg:gap-4">
+          <div class="w-full max-w-[30rem] rounded-[1.6rem] border border-stone-300/70 bg-stone-50/75 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] lg:hidden">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
+                  Current level
+                </p>
+                <h2 class="mt-2 truncate text-xl font-black tracking-tight text-stone-900">
+                  {levelLabel(levelIndex)}
+                </h2>
+              </div>
+              <span class={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${difficultyChipClasses(level.difficulty)}`}>
+                {difficultyLabel(level.difficulty)}
+              </span>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3 text-xs uppercase tracking-[0.24em] text-stone-500">
+              <span>Level {levelIndex + 1} of {levels.length}</span>
+              <span>Solved {progressCount}/{levels.length}</span>
+            </div>
+            <label class="mt-4 block text-xs font-semibold uppercase tracking-[0.24em] text-stone-500" for="mobile-level-select">
+              Choose level
+            </label>
+            <select
+              id="mobile-level-select"
+              class="mt-2 block w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm font-semibold text-stone-800 shadow-sm outline-none transition focus:border-stone-400 focus:ring-2 focus:ring-stone-900/10"
+              value={String(levelIndex)}
+              on:change={handleMobileLevelChange}
+              disabled={solvedOverlayVisible}
+            >
+              {#each levels as entry, index (entry.id)}
+                <option value={String(index)}>
+                  {levelLabel(index)}
+                </option>
+              {/each}
+            </select>
+          </div>
 
-            {#if solvedOverlayVisible}
-              <div
-                class="absolute inset-0 z-30 flex items-center justify-center rounded-[2rem] bg-emerald-950/24 p-4 backdrop-blur-[2px]"
-                role="button"
-                tabindex="0"
-                aria-label="Continue to the next level"
-                transition:fade={{ duration: 180 }}
-                on:click={advanceFromSolvedOverlay}
-                on:keydown={handleSolvedOverlayKeydown}
-              >
+          <div class="flex min-h-0 w-full flex-1 items-center justify-center">
+            <div class="relative w-[min(100%,calc(100dvh-24rem))] max-w-[30rem] sm:w-[min(100%,calc(100dvh-22rem))] lg:w-full">
+              <Board vehicles={state.vehicles} disabled={state.won} onCommitMove={commitMove} />
+
+              {#if solvedOverlayVisible}
                 <div
-                  class="w-full rounded-[1.6rem] border border-emerald-300/70 bg-emerald-50/95 px-5 py-6 text-center shadow-[0_24px_60px_rgba(6,95,70,0.28)]"
-                  transition:scale={{ start: 0.92, duration: 220 }}
+                  class="absolute inset-0 z-30 flex items-center justify-center rounded-[2rem] bg-emerald-950/24 p-4 backdrop-blur-[2px]"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Continue to the next level"
+                  transition:fade={{ duration: 180 }}
+                  on:click={advanceFromSolvedOverlay}
+                  on:keydown={handleSolvedOverlayKeydown}
                 >
-                  <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_10px_26px_rgba(16,185,129,0.35)]">
-                    <svg viewBox="0 0 24 24" class="h-7 w-7" aria-hidden="true">
-                      <path
-                        d="M20 6 9 17l-5-5"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2.8"
-                      />
-                    </svg>
-                  </div>
-                  <p class="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">
-                    Level solved
-                  </p>
-                  <p class="mt-2 text-2xl font-black tracking-tight text-emerald-950">
-                    {level.title} cleared in {state.moves} moves
-                  </p>
-                  <p class="mt-2 text-sm text-emerald-900/80">
-                    Loading the next puzzle... Click to continue now.
-                  </p>
-                  <div class="mt-4 h-2 overflow-hidden rounded-full bg-emerald-200">
-                      <div
-                        class="h-full rounded-full bg-emerald-500"
-                        style={`animation: level-progress ${AUTO_ADVANCE_DELAY_MS}ms linear forwards;`}
-                      ></div>
+                  <div
+                    class="w-full rounded-[1.6rem] border border-emerald-300/70 bg-emerald-50/95 px-5 py-6 text-center shadow-[0_24px_60px_rgba(6,95,70,0.28)]"
+                    transition:scale={{ start: 0.92, duration: 220 }}
+                  >
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_10px_26px_rgba(16,185,129,0.35)]">
+                      <svg viewBox="0 0 24 24" class="h-7 w-7" aria-hidden="true">
+                        <path
+                          d="M20 6 9 17l-5-5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2.8"
+                        />
+                      </svg>
+                    </div>
+                    <p class="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">
+                      Level solved
+                    </p>
+                    <p class="mt-2 text-2xl font-black tracking-tight text-emerald-950">
+                      {levelLabel(levelIndex)} cleared in {state.moves} moves
+                    </p>
+                    <p class="mt-2 text-sm text-emerald-900/80">
+                      Loading the next puzzle... Click to continue now.
+                    </p>
+                    <div class="mt-4 h-2 overflow-hidden rounded-full bg-emerald-200">
+                        <div
+                          class="h-full rounded-full bg-emerald-500"
+                          style={`animation: level-progress ${AUTO_ADVANCE_DELAY_MS}ms linear forwards;`}
+                        ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            {/if}
+              {/if}
+            </div>
           </div>
 
           <div class="grid w-full max-w-[30rem] grid-cols-3 gap-2 rounded-[1.2rem] border border-stone-300/80 bg-stone-50/90 px-3 py-3 text-center text-stone-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
@@ -403,41 +438,31 @@
               <div class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-stone-500">Solved</div>
               <div class="mt-1 text-2xl font-black">{progressCount}/{levels.length}</div>
             </div>
-          </div>
-
-          <div class="flex w-full max-w-[30rem] flex-wrap items-center justify-center gap-3">
-            <button
-              class="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-45"
-              on:click={undoMove}
-              disabled={!canUndo}
-            >
-              Undo
-            </button>
-            <button
-              class="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50"
-              on:click={resetLevel}
-              disabled={solvedOverlayVisible}
-            >
-              Reset
-            </button>
-          </div>
-
-          <div class="w-full max-w-[30rem] rounded-[1.6rem] border border-stone-300/70 bg-stone-50/75 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p class="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">How to play</p>
-            <ul class="mt-3 space-y-2 text-sm leading-6 text-stone-600">
-              <li>Drag a car or truck only in the direction it already faces.</li>
-              <li>The red goal car always escapes through the opening on the right.</li>
-              <li>Use undo to inspect different lines without restarting the board.</li>
-            </ul>
+            <div class="col-span-3 mt-1 flex items-center gap-2 border-t border-stone-200 pt-3">
+              <button
+                class="flex-1 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-45"
+                on:click={undoMove}
+                disabled={!canUndo}
+              >
+                Undo
+              </button>
+              <button
+                class="flex-1 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-45"
+                on:click={resetLevel}
+                disabled={solvedOverlayVisible}
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </div>
 
-        <aside class="flex flex-col gap-4">
+        <aside class="hidden min-h-0 flex-col gap-4 lg:flex">
           <div class="rounded-[1.6rem] border border-stone-300/70 bg-stone-50/75 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
             <p class="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
               Current level
             </p>
-            <h2 class="mt-2 text-2xl font-black tracking-tight text-stone-900">{level.title}</h2>
+            <h2 class="mt-2 text-2xl font-black tracking-tight text-stone-900">{levelLabel(levelIndex)}</h2>
             <p class="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
               Difficulty
             </p>
@@ -481,14 +506,11 @@
                   disabled={solvedOverlayVisible}
                   aria-current={isCurrent ? 'true' : undefined}
                 >
-                  <span class="min-w-0 flex flex-1 items-center text-left text-sm">
+                  <span class="min-w-0 flex flex-1 items-center text-left text-sm font-semibold">
                     <span
-                      class={`mr-2 inline-block w-6 shrink-0 text-xs font-semibold uppercase tracking-[0.14em] ${levelNumberClasses(isCurrent, isCompleted)}`}
+                      class={`inline-block shrink-0 uppercase tracking-[0.14em] ${levelNumberClasses(isCurrent, isCompleted)}`}
                     >
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <span class={`block min-w-0 truncate ${levelTitleClasses(isCurrent, isCompleted)}`}>
-                      {entry.title}
+                      {levelLabel(index)}
                     </span>
                   </span>
                   <span class={`shrink-0 rounded-full border px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.14em] ${difficultyChipClasses(entry.difficulty)}`}>
