@@ -157,6 +157,23 @@
     loadLevel((levelIndex - 1 + levels.length) % levels.length);
   }
 
+  function clearProgressHistory(): void {
+    if (completed.size === 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Clear your solved-level history for this browser? Your current level will stay selected.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    completed = new Set();
+    persistProgress();
+  }
+
   type DifficultyTone = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'unrated';
 
   function normalizeDifficulty(difficulty: string | undefined): DifficultyTone {
@@ -497,6 +514,18 @@
                   </span>
                 </button>
               {/each}
+            </div>
+            <div class="mt-4 border-t border-stone-200 pt-3">
+              <button
+                class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-45"
+                on:click={clearProgressHistory}
+                disabled={completed.size === 0 || solvedOverlayVisible}
+              >
+                Clear history
+              </button>
+              <p class="mt-2 text-xs leading-5 text-stone-500">
+                Removes solved markers from this browser without changing the current puzzle.
+              </p>
             </div>
           </div>
         </aside>
