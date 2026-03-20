@@ -1,0 +1,53 @@
+title: 12
+difficulty: Intermediate
+vehicles:
+  - color: red
+    x: 1
+    y: 2
+    length: 2
+    orientation: horizontal
+  - color: light green
+    x: 0
+    y: 0
+    length: 2
+    orientation: horizontal
+  - color: light blue
+    x: 0
+    y: 1
+    length: 2
+    orientation: vertical
+  - color: orange
+    x: 2
+    y: 0
+    length: 2
+    orientation: vertical
+  - color: yellow
+    x: 3
+    y: 0
+    length: 3
+    orientation: vertical
+  - color: orange
+    x: 4
+    y: 0
+    length: 3
+    orientation: vertical
+  - color: blue
+    x: 5
+    y: 2
+    length: 3
+    orientation: vertical  
+  - color: pink
+    x: 1
+    y: 4
+    length: 2
+    orientation: vertical
+  - color: purple
+    x: 2
+    y: 4
+    length: 2
+    orientation: horizontal
+  - color: forest green
+    x: 3
+    y: 5
+    length: 3
+    orientation: horizontal
