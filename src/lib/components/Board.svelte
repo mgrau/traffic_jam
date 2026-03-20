@@ -26,7 +26,11 @@
   let drag: DragState | null = null;
 
   const percent = 100 / BOARD_SIZE;
-  const frameThickness = '0.62rem';
+  const boardOuterRadius = '1.9rem';
+  const playfieldInset = '0.75rem';
+  const frameThickness = '0.54rem';
+  const halfFrameThickness = '0.27rem';
+  const frameRadius = `calc(${boardOuterRadius} - ${playfieldInset} - ${halfFrameThickness})`;
   const exitCoverWidth = `calc(${frameThickness} + 2px)`;
   const exitOffset = '1.4rem';
   const exitLaneStart = `${2 * percent}%`;
@@ -256,10 +260,12 @@
 
 <div
   bind:this={boardElement}
-  class="relative aspect-square w-full max-w-[30rem] overflow-visible rounded-[2rem] border border-stone-300/80 bg-[linear-gradient(135deg,#f9f3ea_0%,#efe5d5_100%)] shadow-[0_24px_80px_rgba(120,93,49,0.18)]"
+  class="relative aspect-square w-full max-w-[30rem] overflow-visible border bg-[linear-gradient(135deg,#f9f3ea_0%,#efe5d5_100%)] shadow-[0_24px_80px_rgba(120,93,49,0.18)]"
+  style:border-radius={boardOuterRadius}
+  style:border-color="rgba(214, 211, 209, 0.8)"
   aria-label="Traffic puzzle board"
 >
-  <div bind:this={playfieldElement} class="absolute inset-3">
+  <div bind:this={playfieldElement} class="absolute" style:inset={playfieldInset}>
     <div class="absolute inset-0 grid grid-cols-6 grid-rows-6 gap-0">
       {#each Array.from({ length: BOARD_SIZE * BOARD_SIZE }) as _, index}
         <div
@@ -271,7 +277,8 @@
 
     <div class="pointer-events-none absolute inset-0 z-0 overflow-visible">
       <div
-        class="absolute inset-0 rounded-[1.45rem] bg-transparent"
+        class="absolute inset-0 bg-transparent"
+        style:border-radius={frameRadius}
         style={`box-shadow: 0 0 0 ${frameThickness} rgba(68, 64, 60, 0.88), 0 14px 28px rgba(0,0,0,0.18);`}
       ></div>
       <div
